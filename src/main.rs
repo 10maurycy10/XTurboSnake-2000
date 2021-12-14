@@ -19,6 +19,7 @@ use sdl2::AudioSubsystem;
 const DEFAULT_PIXEL_SCALING: usize = 20;
 const WORLD_W: usize = 8;
 const WORLD_H: usize = 8;
+const WORLD_A: usize = WORLD_W * WORLD_H;
 const SNAKE_INIT_SPEED: u32 = 30;
 
 // snake direction states
@@ -51,6 +52,7 @@ impl AudioCallback for SquareWave {
 }
 
 // a function to play a beep this takes a long time (20ms)
+// TODO: Fix this.
 fn beep(audio: &mut AudioSubsystem, spec: &AudioSpecDesired) {
     use std::time::Duration;
     let device = audio
@@ -67,11 +69,12 @@ fn beep(audio: &mut AudioSubsystem, spec: &AudioSpecDesired) {
     std::thread::sleep(Duration::from_millis(20));
 }
 
+
 // container for snake state
 struct Snake {
     len: u32,
-    screen: [u8; WORLD_W * WORLD_H],
-    bits: [u8; WORLD_W * WORLD_H],
+    screen: [u8; WORLD_A],
+    bits: [u8; WORLD_A],
     x: u32,
     y: u32,
     ctr: usize,
@@ -89,8 +92,8 @@ struct Snake {
 fn init_snake() -> Snake {
     Snake {
         len: 1,
-        screen: [0; 64],
-        bits: [0; 64],
+        screen: [0; WORLD_A],
+        bits: [0; WORLD_A],
         x: 3,
         y: 4,
         snake_sp: SNAKE_INIT_SPEED,
@@ -116,7 +119,7 @@ fn snake_tick(snake: &mut Snake, audio: &mut AudioSubsystem, spec: &AudioSpecDes
             // move the snake
             match snake.dir {
                 DIR_DOWN => {
-                    if snake.y == 7 {
+                    if (WORLD_H as u32 -1) == snake.y {
                         snake.y = 0
                     } else {
                         snake.y += 1
@@ -137,7 +140,7 @@ fn snake_tick(snake: &mut Snake, audio: &mut AudioSubsystem, spec: &AudioSpecDes
                     }
                 }
                 DIR_RIGHT => {
-                    if snake.x == 7 {
+                    if snake.x == (WORLD_W as u32-1) {
                         snake.x = 0
                     } else {
                         snake.x += 1
@@ -265,22 +268,22 @@ pub fn main() -> Result<(), String> {
                     // change the new_dir of the snake
                     match keycode {
                         Some(Keycode::W) => {
-                            if (snake.dir != DIR_DOWN) {
+                            if snake.dir != DIR_DOWN {
                                 snake.new_dir = DIR_UP
                             }
                         }
                         Some(Keycode::A) => {
-                            if (snake.dir != DIR_RIGHT) {
+                            if snake.dir != DIR_RIGHT {
                                 snake.new_dir = DIR_LEFT
                             }
                         }
                         Some(Keycode::S) => {
-                            if (snake.dir != DIR_UP) {
+                            if snake.dir != DIR_UP {
                                 snake.new_dir = DIR_DOWN
                             }
                         }
                         Some(Keycode::D) => {
-                            if (snake.dir != DIR_LEFT) {
+                            if snake.dir != DIR_LEFT {
                                 snake.new_dir = DIR_RIGHT
                             }
                         }
@@ -307,7 +310,7 @@ pub fn main() -> Result<(), String> {
                         (y * DEFAULT_PIXEL_SCALING) as i32,
                         DEFAULT_PIXEL_SCALING as u32,
                         DEFAULT_PIXEL_SCALING as u32,
-                    ));
+                    )).unwrap();
                 }
             }
         }
@@ -318,7 +321,7 @@ pub fn main() -> Result<(), String> {
             snake.y as i32 * DEFAULT_PIXEL_SCALING as i32,
             DEFAULT_PIXEL_SCALING as u32,
             DEFAULT_PIXEL_SCALING as u32,
-        ));
+        )).unwrap();
 
         //
         canvas.present();
