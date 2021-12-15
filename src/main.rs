@@ -7,7 +7,6 @@
 //
 // Audio requires alsa/pulseaudio/pipewire/windows-api
 
-use sdl2;
 use sdl2::audio::AudioCallback;
 use sdl2::audio::AudioSpecDesired;
 use sdl2::event::Event;
@@ -56,7 +55,7 @@ impl AudioCallback for SquareWave {
 fn beep(audio: &mut AudioSubsystem, spec: &AudioSpecDesired) {
     use std::time::Duration;
     let device = audio
-        .open_playback(None, &spec, |spec| {
+        .open_playback(None, spec, |spec| {
             // initialize the audio callback
             SquareWave {
                 phase_inc: 500.0 / spec.freq as f32,
@@ -171,7 +170,8 @@ fn snake_tick(snake: &mut Snake, audio: &mut AudioSubsystem, spec: &AudioSpecDes
             for i in 0..snake.len {
                 if (snake.x + snake.y * WORLD_H as u32) as u8 == snake.bits[i as usize] {
                     // end game
-                    snake.game_over = true
+		    println!("lost game at len of {}",snake.len);
+		    snake.game_over = true
                 }
             }
 
@@ -186,17 +186,14 @@ fn snake_tick(snake: &mut Snake, audio: &mut AudioSubsystem, spec: &AudioSpecDes
         if snake.game_over_timer == 0 {
             // reset timer
             snake.game_over_timer = 20;
-
-            // if len is 0
-            if snake.len == 0 {
-                // restart game
-                snake.len = 1;
-                snake.game_over = false;
-            } else {
+	    if snake.len != 0 {
                 // if the len is not zero reduce len and play a beep
                 beep(audio, spec);
                 snake.len -= 1;
-            }
+            } else {
+		snake.len = 1;
+		snake.game_over = false;
+	    }
         } else {
             snake.game_over_timer -= 1;
         }
@@ -330,6 +327,8 @@ pub fn main() -> Result<(), String> {
         // arbitrary delay
         ::std::thread::sleep(Duration::new(0, 1_000_000u32 * 8));
     }
+
+    println!("Quit at len: {}",snake.len);
 
     Ok(())
 }
